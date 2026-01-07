@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOIP_CONFIG_FILE>
+<version>2.0002</version>
+<GLOBAL_CONFIG_MODULE>
+<WAN_Mode>DHCP</WAN_Mode>
+<Enable_DHCP>1</Enable_DHCP>
+<PrimaryDNS>{$dns_server_primary}</PrimaryDNS>
+<SecondaryDNS>{$dns_server_secondary}</SecondaryDNS>
+<SNTP_Server>{$ntp_server_primary}</SNTP_Server>
+<Second_SNTP_Server>{$ntp_server_secondary}</Second_SNTP_Server>
+<Enable_SNTP>1</Enable_SNTP>
+<Time_Zone>{$fanvil_time_zone}</Time_Zone>
+<Location>{$fanvil_location}</Location>
+<Time_Zone_Name>{$fanvil_time_zone_name}</Time_Zone_Name>
+<Enable_DST>{$fanvil_enable_dst}</Enable_DST>
+</GLOBAL_CONFIG_MODULE>
+<SIP_CONFIG_MODULE>
+<SIP__Port>5060</SIP__Port>
+<SIP_Line_List>
+<SIP_Line_List_Entry>
+<ID>SIP1</ID>
+<Phone_Number>{$account.1.user_id}</Phone_Number>
+<Display_Name>{$account.1.display_name}</Display_Name>
+<Sip_Name>{$fanvil_server_name}</Sip_Name>
+<Register_Addr>{$account.1.server_address}</Register_Addr>
+<Register_Port>{$account.1.sip_port}</Register_Port>
+<Register_User>{$account.1.auth_id}</Register_User>
+<Register_Pswd>{$account.1.password}</Register_Pswd>
+<Register_TTL>{$account.1.register_expires}</Register_TTL>
+<Enable_Reg>{if isset($account.1.password)}1{else}0{/if}</Enable_Reg>
+<Proxy_Addr>{$account.1.outbound_proxy_primary}</Proxy_Addr>
+<Proxy_Port>{$account.1.sip_port}</Proxy_Port>
+<Proxy_User>{$account.1.auth_id}</Proxy_User>
+<Proxy_Pswd>{$account.1.password}</Proxy_Pswd>
+<BakProxy_Addr>{$account.1.outbound_proxy_secondary}</BakProxy_Addr>
+<BakProxy_Port>{$account.1.sip_port}</BakProxy_Port>
+<Enable_Failbac>1</Enable_Failbac>
+<DTMF_Mode>3</DTMF_Mode>
+{if $account.1.sip_transport == 'udp'}<Transport>0</Transport>{/if}
+{if $account.1.sip_transport == 'tcp'}<Transport>1</Transport>{/if}
+{if $account.1.sip_transport == 'tls'}<Transport>2</Transport>{/if}
+{if $account.1.sip_transport == 'dns srv'}<DNS_SRV>1</DNS_SRV>{/if}
+{if $account.1.sip_transport == 'dns srv'}<DNS_Mode>1</DNS_Mode>{/if}
+</SIP_Line_List_Entry>
+<!-- Second account starts here -->
+<SIP_Line_List_Entry>
+<ID>SIP2</ID>
+<Phone_Number>{$account.2.user_id}</Phone_Number>
+<Display_Name>{$account.2.display_name}</Display_Name>
+<Sip_Name>{$fanvil_server_name}</Sip_Name>
+<Register_Addr>{$account.2.server_address}</Register_Addr>
+<Register_Port>{$account.2.sip_port}</Register_Port>
+<Register_User>{$account.2.auth_id}</Register_User>
+<Register_Pswd>{$account.2.password}</Register_Pswd>
+<Register_TTL>{$account.2.register_expires}</Register_TTL>
+<Enable_Reg>{if isset($account.2.password)}1{else}0{/if}</Enable_Reg>
+<Proxy_Addr>{$account.2.outbound_proxy_primary}</Proxy_Addr>
+<Proxy_Port>{$account.2.sip_port}</Proxy_Port>
+<Proxy_User>{$account.2.auth_id}</Proxy_User>
+<Proxy_Pswd>{$account.2.password}</Proxy_Pswd>
+<BakProxy_Addr>{$account.2.outbound_proxy_secondary}</BakProxy_Addr>
+<BakProxy_Port>{$account.2.sip_port}</BakProxy_Port>
+<Enable_Failbac>1</Enable_Failbac>
+<DTMF_Mode>3</DTMF_Mode>
+{if $account.2.sip_transport == 'udp'}<Transport>0</Transport>{/if}
+{if $account.2.sip_transport == 'tcp'}<Transport>1</Transport>{/if}
+{if $account.2.sip_transport == 'tls'}<Transport>2</Transport>{/if}
+{if $account.2.sip_transport == 'dns srv'}<DNS_SRV>1</DNS_SRV>{/if}
+{if $account.2.sip_transport == 'dns srv'}<DNS_Mode>1</DNS_Mode>{/if}
+</SIP_Line_List_Entry>
+<!-- End of second account -->
+</SIP_Line_List>
+</SIP_CONFIG_MODULE>
+<PHONE_CONFIG_MODULE>
+<LCD_Title>{$fanvil_greeting}</LCD_Title>
+<Time_Display_Style>{if isset($fanvil_time_display)}{$fanvil_time_display}{else}0{/if}</Time_Display_Style>
+<Date_Display_Style>{$fanvil_date_display}</Date_Display_Style>
+</PHONE_CONFIG_MODULE>
+<AUTOUPDATE_CONFIG_MODULE>
+<Download_Username>{$http_auth_username}</Download_Username>
+<Download_Password>{$http_auth_password}</Download_Password>
+<Download_Server_IP>https://{$domain_name}/app/provision</Download_Server_IP>
+<Download_Protocol>5</Download_Protocol>
+<Download_Mode>1</Download_Mode>
+</AUTOUPDATE_CONFIG_MODULE>
+</VOIP_CONFIG_FILE>

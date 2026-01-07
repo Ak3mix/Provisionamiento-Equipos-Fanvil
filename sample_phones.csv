@@ -1,0 +1,4 @@
+mac_address,account.1.user_id,account.1.password,account.1.server_address,account.1.display_name,account.1.auth_id,account.1.sip_port,account.1.outbound_proxy_primary,account.2.user_id,account.2.password,account.2.server_address,account.2.display_name,account.2.auth_id
+00:11:22:33:44:55,1001,password123,sip.example.com,Usuario 1001,1001,5060,proxy.example.com,1002,password456,sip.example.com,Usuario 1002,1002
+00:11:22:33:44:56,1003,password123,sip.example.com,Usuario 1003,1003,5060,,,
+00:11:22:33:44:57,1004,password123,sip.example.com,Usuario 1004,1004,5060,proxy.example.com,1005,password789,sip.example.com,Usuario 1005,1005
