@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Autoprovisionamiento Fanvil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc, #003d99);
+            color: white;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+            transition: box-shadow 0.15s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .device-card {
+            border-left: 4px solid #007bff;
+        }
+        .config-card {
+            border-left: 4px solid #28a745;
+        }
+        .action-btn {
+            margin: 0 2px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .form-control:disabled, .form-select:disabled {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="text-center mb-0">
+                <i class="bi bi-router"></i> Sistema de Autoprovisionamiento Fanvil
+            </h1>
+            <p class="text-center mb-0">Gestión de dispositivos SIP Fanvil</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Sección de Dispositivos -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2><i class="bi bi-phone"></i> Dispositivos SIP</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+                        <i class="bi bi-plus-circle"></i> Agregar Dispositivo
+                    </button>
+                </div>
+                
+                <div class="row" id="devicesContainer">
+                    {% for mac, device in devices.items() %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card device-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>
+                                    <span class="status-indicator status-online"></span>
+                                    {{ device.name }}
+                                </span>
+                                <span class="badge bg-secondary">{{ device.model }}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>MAC:</strong> {{ device.mac }}<br>
+                                    <strong>Usuario:</strong> {{ device.username }}<br>
+                                    <strong>Servidor SIP:</strong> {{ device.sip_server }}:{{ device.port }}
+                                </p>
+                                <div class="d-flex justify-content-end">
+                                    <button class="btn btn-sm btn-outline-primary action-btn" 
+                                            onclick="editDevice('{{ mac }}', {{ device | tojson }})" 
+                                            title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success action-btn" 
+                                            onclick="generateConfig('{{ mac }}')" 
+                                            title="Generar Config">
+                                        <i class="bi bi-gear"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger action-btn" 
+                                            onclick="deleteDevice('{{ mac }}')" 
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not devices %}
+                    <div class="col-12">
+                        <div class="alert alert-info text-center">
+                            <i class="bi bi-info-circle"></i> No hay dispositivos registrados aún. 
+                            <a href="#" class="alert-link" data-bs-toggle="modal" data-bs-target="#addDeviceModal">Agregar uno ahora</a>.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Archivos de Configuración -->
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="bi bi-file-text"></i> Archivos de Configuración</h2>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>MAC</th>
+                                <th>Nombre de Archivo</th>
+                                <th>Fecha de Modificación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in config_files %}
+                            <tr>
+                                <td>{{ file.mac }}</td>
+                                <td>{{ file.filename }}</td>
+                                <td>{{ file.modified }}</td>
+                                <td>
+                                    <a href="/config/{{ file.filename }}" target="_blank" class="btn btn-sm btn-outline-info action-btn" title="Ver">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="/config/{{ file.filename }}" class="btn btn-sm btn-outline-primary action-btn" title="Descargar" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% if not config_files %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay archivos de configuración generados</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Dispositivo -->
+    <div class="modal fade" id="addDeviceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Nuevo Dispositivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="deviceForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="deviceName" class="form-label">Nombre del Dispositivo</label>
+                                    <input type="text" class="form-control" id="deviceName" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="deviceMac" class="form-label">Dirección MAC</label>
+                                    <input type="text" class="form-control" id="deviceMac" placeholder="00:11:22:33:44:55" required>
+                                    <div class="form-text">Formato: 00:11:22:33:44:55 o 00-11-22-33-44-55 o 0011.2233.4455</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="deviceModel" class="form-label">Modelo Fanvil</label>
+                                    <select class="form-select" id="deviceModel" required>
+                                        <option value="">Seleccionar modelo</option>
+                                        <option value="X4">Fanvil X4</option>
+                                        <option value="X5">Fanvil X5</option>
+                                        <option value="X6">Fanvil X6</option>
+                                        <option value="X7">Fanvil X7</option>
+                                        <option value="X8">Fanvil X8</option>
+                                        <option value="X9">Fanvil X9</option>
+                                        <option value="X10">Fanvil X10</option>
+                                        <option value="E2">Fanvil E2</option>
+                                        <option value="E3">Fanvil E3</option>
+                                        <option value="E5">Fanvil E5</option>
+                                        <option value="V62">Fanvil V62</option>
+                                        <option value="V63">Fanvil V63</option>
+                                        <option value="V64">Fanvil V64</option>
+                                        <option value="V65">Fanvil V65</option>
+                                        <option value="V67">Fanvil V67</option>
+                                        <option value="V68">Fanvil V68</option>
+                                        <option value="V69">Fanvil V69</option>
+                                        <option value="V71">Fanvil V71</option>
+                                        <option value="V72">Fanvil V72</option>
+                                        <option value="V73">Fanvil V73</option>
+                                        <option value="V75">Fanvil V75</option>
+                                        <option value="V76">Fanvil V76</option>
+                                        <option value="V78">Fanvil V78</option>
+                                        <option value="V79">Fanvil V79</option>
+                                        <option value="T60">Fanvil T60</option>
+                                        <option value="T61">Fanvil T61</option>
+                                        <option value="T62">Fanvil T62</option>
+                                        <option value="T63">Fanvil T63</option>
+                                        <option value="T64">Fanvil T64</option>
+                                        <option value="T65">Fanvil T65</option>
+                                        <option value="T66">Fanvil T66</option>
+                                        <option value="T67">Fanvil T67</option>
+                                        <option value="T68">Fanvil T68</option>
+                                        <option value="T69">Fanvil T69</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="sipUsername" class="form-label">Usuario SIP</label>
+                                    <input type="text" class="form-control" id="sipUsername" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="sipPassword" class="form-label">Contraseña SIP</label>
+                                    <input type="password" class="form-control" id="sipPassword" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="sipServer" class="form-label">Servidor SIP</label>
+                                    <input type="text" class="form-control" id="sipServer" placeholder="sip.example.com" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="sipPort" class="form-label">Puerto SIP</label>
+                                    <input type="number" class="form-control" id="sipPort" value="5060" min="1" max="65535">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="displayName" class="form-label">Nombre a Mostrar</label>
+                                    <input type="text" class="form-control" id="displayName">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDevice()">Guardar Dispositivo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Dispositivo -->
+    <div class="modal fade" id="editDeviceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Dispositivo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDeviceForm">
+                        <input type="hidden" id="editDeviceMacOriginal">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editDeviceName" class="form-label">Nombre del Dispositivo</label>
+                                    <input type="text" class="form-control" id="editDeviceName" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editDeviceMac" class="form-label">Dirección MAC</label>
+                                    <input type="text" class="form-control" id="editDeviceMac" placeholder="00:11:22:33:44:55" required>
+                                    <div class="form-text">Formato: 00:11:22:33:44:55 o 00-11-22-33-44-55 o 0011.2233.4455</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editDeviceModel" class="form-label">Modelo Fanvil</label>
+                                    <select class="form-select" id="editDeviceModel" required>
+                                        <option value="">Seleccionar modelo</option>
+                                        <option value="X4">Fanvil X4</option>
+                                        <option value="X5">Fanvil X5</option>
+                                        <option value="X6">Fanvil X6</option>
+                                        <option value="X7">Fanvil X7</option>
+                                        <option value="X8">Fanvil X8</option>
+                                        <option value="X9">Fanvil X9</option>
+                                        <option value="X10">Fanvil X10</option>
+                                        <option value="E2">Fanvil E2</option>
+                                        <option value="E3">Fanvil E3</option>
+                                        <option value="E5">Fanvil E5</option>
+                                        <option value="V62">Fanvil V62</option>
+                                        <option value="V63">Fanvil V63</option>
+                                        <option value="V64">Fanvil V64</option>
+                                        <option value="V65">Fanvil V65</option>
+                                        <option value="V67">Fanvil V67</option>
+                                        <option value="V68">Fanvil V68</option>
+                                        <option value="V69">Fanvil V69</option>
+                                        <option value="V71">Fanvil V71</option>
+                                        <option value="V72">Fanvil V72</option>
+                                        <option value="V73">Fanvil V73</option>
+                                        <option value="V75">Fanvil V75</option>
+                                        <option value="V76">Fanvil V76</option>
+                                        <option value="V78">Fanvil V78</option>
+                                        <option value="V79">Fanvil V79</option>
+                                        <option value="T60">Fanvil T60</option>
+                                        <option value="T61">Fanvil T61</option>
+                                        <option value="T62">Fanvil T62</option>
+                                        <option value="T63">Fanvil T63</option>
+                                        <option value="T64">Fanvil T64</option>
+                                        <option value="T65">Fanvil T65</option>
+                                        <option value="T66">Fanvil T66</option>
+                                        <option value="T67">Fanvil T67</option>
+                                        <option value="T68">Fanvil T68</option>
+                                        <option value="T69">Fanvil T69</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editSipUsername" class="form-label">Usuario SIP</label>
+                                    <input type="text" class="form-control" id="editSipUsername" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editSipPassword" class="form-label">Contraseña SIP</label>
+                                    <input type="password" class="form-control" id="editSipPassword" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editSipServer" class="form-label">Servidor SIP</label>
+                                    <input type="text" class="form-control" id="editSipServer" placeholder="sip.example.com" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editSipPort" class="form-label">Puerto SIP</label>
+                                    <input type="number" class="form-control" id="editSipPort" value="5060" min="1" max="65535">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="editDisplayName" class="form-label">Nombre a Mostrar</label>
+                                    <input type="text" class="form-control" id="editDisplayName">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="updateDevice()">Actualizar Dispositivo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para formatear la MAC
+        function formatMac(mac) {
+            // Eliminar caracteres no hexadecimales
+            let cleanMac = mac.replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+            if (cleanMac.length === 12) {
+                // Formatear como 00:11:22:33:44:55
+                return cleanMac.match(/.{2}/g).join(':');
+            }
+            return mac;
+        }
+
+        // Función para guardar un nuevo dispositivo
+        function saveDevice() {
+            const name = document.getElementById('deviceName').value;
+            const mac = formatMac(document.getElementById('deviceMac').value);
+            const model = document.getElementById('deviceModel').value;
+            const username = document.getElementById('sipUsername').value;
+            const password = document.getElementById('sipPassword').value;
+            const server = document.getElementById('sipServer').value;
+            const port = document.getElementById('sipPort').value;
+            const displayName = document.getElementById('displayName').value;
+
+            fetch('/add_device', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mac: mac,
+                    model: model,
+                    name: name,
+                    username: username,
+                    password: password,
+                    sip_server: server,
+                    port: port,
+                    display_name: displayName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Dispositivo agregado correctamente');
+                    location.reload();
+                } else {
+                    alert('Error al agregar dispositivo: ' + (data.error || 'Desconocido'));
+                }
+            })
+            .catch(error => {
+                alert('Error de red: ' + error);
+            });
+        }
+
+        // Función para editar un dispositivo
+        function editDevice(mac, device) {
+            document.getElementById('editDeviceMacOriginal').value = mac;
+            document.getElementById('editDeviceName').value = device.name;
+            document.getElementById('editDeviceMac').value = device.mac;
+            document.getElementById('editDeviceModel').value = device.model;
+            document.getElementById('editSipUsername').value = device.username;
+            document.getElementById('editSipPassword').value = device.password;
+            document.getElementById('editSipServer').value = device.sip_server;
+            document.getElementById('editSipPort').value = device.port;
+            document.getElementById('editDisplayName').value = device.display_name || device.name;
+
+            const modal = new bootstrap.Modal(document.getElementById('editDeviceModal'));
+            modal.show();
+        }
+
+        // Función para actualizar un dispositivo
+        function updateDevice() {
+            const originalMac = document.getElementById('editDeviceMacOriginal').value;
+            const name = document.getElementById('editDeviceName').value;
+            const mac = formatMac(document.getElementById('editDeviceMac').value);
+            const model = document.getElementById('editDeviceModel').value;
+            const username = document.getElementById('editSipUsername').value;
+            const password = document.getElementById('editSipPassword').value;
+            const server = document.getElementById('editSipServer').value;
+            const port = document.getElementById('editSipPort').value;
+            const displayName = document.getElementById('editDisplayName').value;
+
+            fetch(`/edit_device/${originalMac}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mac: mac,
+                    model: model,
+                    name: name,
+                    username: username,
+                    password: password,
+                    sip_server: server,
+                    port: port,
+                    display_name: displayName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Dispositivo actualizado correctamente');
+                    location.reload();
+                } else {
+                    alert('Error al actualizar dispositivo: ' + (data.error || 'Desconocido'));
+                }
+            })
+            .catch(error => {
+                alert('Error de red: ' + error);
+            });
+        }
+
+        // Función para eliminar un dispositivo
+        function deleteDevice(mac) {
+            if (confirm('¿Estás seguro de que deseas eliminar este dispositivo?')) {
+                fetch(`/delete_device/${mac}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Dispositivo eliminado correctamente');
+                        location.reload();
+                    } else {
+                        alert('Error al eliminar dispositivo: ' + (data.error || 'Desconocido'));
+                    }
+                })
+                .catch(error => {
+                    alert('Error de red: ' + error);
+                });
+            }
+        }
+
+        // Función para generar un archivo de configuración
+        function generateConfig(mac) {
+            fetch(`/generate_config/${mac}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Configuración generada correctamente');
+                    location.reload();
+                } else {
+                    alert('Error al generar configuración: ' + (data.error || 'Desconocido'));
+                }
+            })
+            .catch(error => {
+                alert('Error de red: ' + error);
+            });
+        }
+
+        // Validar formato MAC mientras se escribe
+        document.getElementById('deviceMac').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^0-9A-Fa-f]/g, '');
+            if (value.length > 12) value = value.substring(0, 12);
+            
+            // Formatear cada 2 caracteres con ':'
+            let formatted = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 2 === 0) formatted += ':';
+                formatted += value[i];
+            }
+            
+            e.target.value = formatted.toUpperCase();
+        });
+
+        document.getElementById('editDeviceMac').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^0-9A-Fa-f]/g, '');
+            if (value.length > 12) value = value.substring(0, 12);
+            
+            // Formatear cada 2 caracteres con ':'
+            let formatted = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 2 === 0) formatted += ':';
+                formatted += value[i];
+            }
+            
+            e.target.value = formatted.toUpperCase();
+        });
+    </script>
+</body>
+</html>
