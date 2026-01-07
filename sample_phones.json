@@ -1,0 +1,43 @@
+{
+  "phones": [
+    {
+      "mac_address": "00:11:22:33:44:58",
+      "account.1.user_id": "1006",
+      "account.1.password": "password123",
+      "account.1.server_address": "sip.example.com",
+      "account.1.display_name": "Usuario 1006",
+      "account.1.auth_id": "1006",
+      "account.1.sip_port": "5060",
+      "account.1.outbound_proxy_primary": "proxy.example.com",
+      "account.2.user_id": "1007",
+      "account.2.password": "password456",
+      "account.2.server_address": "sip.example.com",
+      "account.2.display_name": "Usuario 1007",
+      "account.2.auth_id": "1007"
+    },
+    {
+      "mac_address": "00:11:22:33:44:59",
+      "account.1.user_id": "1008",
+      "account.1.password": "password123",
+      "account.1.server_address": "sip.example.com",
+      "account.1.display_name": "Usuario 1008",
+      "account.1.auth_id": "1008",
+      "account.1.sip_port": "5060"
+    },
+    {
+      "mac_address": "00:11:22:33:44:60",
+      "account.1.user_id": "1009",
+      "account.1.password": "password123",
+      "account.1.server_address": "sip.example.com",
+      "account.1.display_name": "Usuario 1009",
+      "account.1.auth_id": "1009",
+      "account.1.sip_port": "5060",
+      "account.1.outbound_proxy_primary": "proxy.example.com",
+      "account.2.user_id": "1010",
+      "account.2.password": "password789",
+      "account.2.server_address": "sip.example.com",
+      "account.2.display_name": "Usuario 1010",
+      "account.2.auth_id": "1010"
+    }
+  ]
+}
