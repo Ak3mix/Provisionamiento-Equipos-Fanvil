@@ -6,7 +6,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # Directorios
-CONFIG_DIR = 'config'
+CONFIG_DIR = 'fanvil-provisioning/config'
 DEVICES_FILE = 'devices.json'
 
 def load_devices():
