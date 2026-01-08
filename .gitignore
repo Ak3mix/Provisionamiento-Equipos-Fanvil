@@ -1,3 +1,1 @@
-```
-*.bak
-```
+Nothing should be ignored based on the provided file changes. The only added file is a Python source file (`fanvil_provisioner.py`), which should not be ignored. There are no build artifacts, dependencies, or temporary files in the changes that require ignoring.
